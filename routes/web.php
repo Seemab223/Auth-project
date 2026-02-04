@@ -17,6 +17,8 @@ Route::middleware([
     Route::get('/', function () {
     return view('dashboard');
     });
+
+    
     Route::get('/task', function () {
         return view('task');
     })->name('task');

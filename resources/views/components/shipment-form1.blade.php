@@ -1,26 +1,12 @@
-<link rel="stylesheet" href="https://www.richtexteditor.com/richtexteditor/rte_theme_default.css" />
-<script type="text/javascript" src="https://www.richtexteditor.com/richtexteditor/rte.js"></script>
-<script type="text/javascript" src='https://www.richtexteditor.com/richtexteditor/plugins/all_plugins.js'></script>
-
-
-
-
-
-
 <h1 class="text-2xl font-bold mb-6 text-center">Shipment Details</h1>
 
 <!-- Textarea to input raw data and parse button -->
 <div class="mb-6">
     <label class="block font-medium text-gray-700">Enter Shipment Data</label>
-    <div id="div_editor1" style="height: 260px"></div>
+    <textarea id="rawData" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-white" rows="12" placeholder="Paste your shipment data here..."></textarea>
     <button type="button" id="parseBtn" class="mt-2 px-4 py-2 bg-blue-600  rounded-md hover:bg-blue-700">Parse</button>
 </div>
-<script>
-	var editor1cfg = {}
-	var editor1 = new RichTextEditor("#div_editor1", editor1cfg);
-	editor1.setHTMLCode("<p> </p>")
-</script>
-<br />
+
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
@@ -69,46 +55,26 @@
     </div>
 </div>
 
-
 <script>
-document.getElementById('parseBtn').addEventListener('click', () => {
+document.addEventListener('paste', (e) => {
+    // This gets the REAL table data, including empty cells
+    const html = e.clipboardData.getData('text/html');
+    if (html.includes('<td')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const cells = Array.from(doc.querySelectorAll('td')).map(td => td.innerText.trim());
 
-    // 1️⃣ Get HTML from rich text editor
-    const html = editor1.getHTMLCode();
-
-    if (!html.includes('<td')) {
-        alert('Please paste data from Excel (table format).');
-        return;
+        if (cells.length >= 9) {
+            const data = cells.length >= 18 ? cells.slice(9) : cells;
+            const fields = ['appt_date', 'po_ref', 'destination', 'client', 'bol', 'pallet_positions', 'cartons', 'weight', 'notes'];
+            
+            fields.forEach((id, i) => {
+                if(document.getElementById(id)) document.getElementById(id).value = data[i] || '';
+            });
+            
+            // Optional: prevent the raw text from filling the textarea
+            e.preventDefault(); 
+        }
     }
-
-    // 2️⃣ Parse HTML safely
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-    // 3️⃣ Extract ALL td cells (INCLUDING EMPTY ONES)
-    const cells = Array.from(doc.querySelectorAll('td'))
-        .map(td => td.innerText.trim());
-
-    // 4️⃣ Handle case where header row exists
-    const data = cells.length >= 18 ? cells.slice(9) : cells;
-
-    // 5️⃣ Map fields in exact order
-    const fields = [
-        'appt_date',
-        'po_ref',
-        'destination',
-        'client',
-        'bol',
-        'pallet_positions',
-        'cartons',
-        'weight',
-        'notes'
-    ];
-
-    fields.forEach((id, i) => {
-        const el = document.getElementById(id);
-        if (el) el.value = data[i] || '';
-    });
-
 });
 </script>
